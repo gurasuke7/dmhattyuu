@@ -1,0 +1,341 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.app { padding: 1rem 0; font-family: var(--font-sans); }
+.section { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+.section-title { font-size: 14px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.input-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.input-row input[type="text"] { flex: 2; }
+.input-row input[type="number"] { flex: 1; max-width: 80px; }
+.order-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.order-table th { text-align: left; font-weight: 500; font-size: 12px; color: var(--color-text-secondary); padding: 0 8px 8px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+.order-table td { padding: 8px 8px 8px 0; border-bottom: 0.5px solid var(--color-border-tertiary); vertical-align: middle; }
+.order-table tr:last-child td { border-bottom: none; }
+.qty-input { width: 60px; text-align: center; padding: 4px 6px; font-size: 14px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); }
+.icon-btn { background: none; border: none; cursor: pointer; padding: 4px; color: var(--color-text-secondary); font-size: 16px; border-radius: var(--border-radius-md); }
+.icon-btn:hover { background: var(--color-background-secondary); }
+.icon-btn.fav { color: var(--color-text-warning); }
+.empty { text-align: center; color: var(--color-text-tertiary); font-size: 14px; padding: 2rem 0; }
+.copy-area { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px; font-family: var(--font-mono); font-size: 13px; color: var(--color-text-primary); white-space: pre-wrap; word-break: break-all; min-height: 60px; margin-bottom: 10px; line-height: 1.8; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.count-badge { background: var(--color-background-info); color: var(--color-text-info); font-size: 11px; font-weight: 500; border-radius: 999px; padding: 1px 8px; }
+.hint { font-size: 12px; color: var(--color-text-tertiary); margin-top: 6px; }
+.tab-row { display: flex; gap: 4px; margin-bottom: 12px; }
+.tab { padding: 6px 14px; font-size: 13px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: none; color: var(--color-text-secondary); cursor: pointer; }
+.tab.active { background: var(--color-background-secondary); color: var(--color-text-primary); font-weight: 500; border-color: var(--color-border-primary); }
+
+/* QR Scanner */
+#qrSection { position: relative; }
+#scannerWrap { position: relative; width: 100%; max-width: 360px; margin: 0 auto; border-radius: var(--border-radius-lg); overflow: hidden; background: #000; aspect-ratio: 1; display: none; }
+#scannerWrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scan-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.scan-frame { width: 60%; height: 60%; border: 2.5px solid #fff; border-radius: 12px; box-shadow: 0 0 0 2000px rgba(0,0,0,0.45); }
+.scan-line { position: absolute; left: 20%; right: 20%; height: 2px; background: rgba(100,200,255,0.85); border-radius: 2px; animation: scanMove 2s linear infinite; }
+@keyframes scanMove { 0%{top:20%} 50%{top:80%} 100%{top:20%} }
+.scan-result-banner { background: var(--color-background-success); border: 0.5px solid var(--color-border-success); color: var(--color-text-success); border-radius: var(--border-radius-md); padding: 10px 14px; font-size: 14px; margin-top: 10px; display: none; align-items: center; gap: 8px; }
+.qr-btn-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+#stopBtn { display: none; }
+
+/* qty modal overlay */
+.qty-modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 9999; display: none; }
+.qty-modal { background: var(--color-background-primary); border-radius: var(--border-radius-lg); border: 0.5px solid var(--color-border-tertiary); padding: 1.5rem; min-width: 260px; max-width: 340px; width: 90%; }
+.qty-modal h3 { font-size: 16px; font-weight: 500; margin-bottom: 4px; }
+.qty-modal .code-label { font-family: var(--font-mono); font-size: 13px; color: var(--color-text-secondary); margin-bottom: 16px; }
+.qty-modal input { width: 100%; margin-bottom: 12px; text-align: center; font-size: 20px; }
+.qty-modal .modal-btns { display: flex; gap: 8px; }
+.qty-modal .modal-btns button { flex: 1; }
+</style>
+
+<h2 class="sr-only">HEADSオンラインショップ QRコード対応 注文リスト作成アプリ</h2>
+
+<div class="app">
+
+  <!-- QRスキャナー -->
+  <div class="section" id="qrSection">
+    <div class="section-title"><i class="ti ti-qrcode" aria-hidden="true"></i> QRコードで追加</div>
+    <div class="qr-btn-row">
+      <button id="startBtn" onclick="startScan()"><i class="ti ti-camera" aria-hidden="true"></i> カメラを起動</button>
+      <button id="stopBtn" onclick="stopScan()"><i class="ti ti-player-stop" aria-hidden="true"></i> 停止</button>
+      <span style="font-size:13px; color:var(--color-text-tertiary);">QRを読み取ると自動で商品番号が入力されます</span>
+    </div>
+    <div id="scannerWrap" style="margin-top:12px;">
+      <video id="video" playsinline></video>
+      <div class="scan-overlay">
+        <div class="scan-frame"></div>
+        <div class="scan-line"></div>
+      </div>
+    </div>
+    <div class="scan-result-banner" id="resultBanner">
+      <i class="ti ti-check" aria-hidden="true"></i>
+      <span id="resultText"></span>
+    </div>
+  </div>
+
+  <!-- 手動入力 -->
+  <div class="section">
+    <div class="section-title"><i class="ti ti-keyboard" aria-hidden="true"></i> 手動で追加</div>
+    <div class="input-row">
+      <input type="text" id="codeInput" placeholder="商品番号（例：A-12345）" />
+      <input type="number" id="qtyInput" placeholder="数量" min="1" value="1" />
+      <button onclick="addItemManual()"><i class="ti ti-plus" aria-hidden="true"></i> 追加</button>
+    </div>
+    <div class="input-row">
+      <input type="text" id="nameInput" placeholder="商品名（任意）" />
+      <input type="text" id="noteInput" placeholder="備考（任意）" />
+    </div>
+    <p class="hint">Enterキーで追加できます</p>
+  </div>
+
+  <!-- 注文リスト -->
+  <div class="section">
+    <div class="section-title">
+      <i class="ti ti-list" aria-hidden="true"></i> 注文リスト
+      <span class="count-badge" id="countBadge">0件</span>
+    </div>
+    <div id="orderBody"><div class="empty">QRコードを読み取るか、商品番号を入力してください</div></div>
+  </div>
+
+  <!-- コピー＆お気に入り -->
+  <div class="section">
+    <div class="tab-row">
+      <button class="tab active" onclick="showTab('copy')" id="tab-copy">かんたん注文用コピー</button>
+      <button class="tab" onclick="showTab('fav')" id="tab-fav">お気に入り <span id="favCount"></span></button>
+    </div>
+    <div id="panel-copy">
+      <div class="copy-area" id="copyText">リストに商品を追加するとここに表示されます</div>
+      <div class="btn-row">
+        <button onclick="copyToClipboard()"><i class="ti ti-copy" aria-hidden="true"></i> クリップボードにコピー</button>
+        <button onclick="clearAll()"><i class="ti ti-trash" aria-hidden="true"></i> クリア</button>
+        <button onclick="loadFavs()"><i class="ti ti-star" aria-hidden="true"></i> お気に入りを読み込む</button>
+      </div>
+      <p class="hint" style="margin-top:8px;">「かんたん注文」ページを開き、上のコードを参照しながら入力してください</p>
+    </div>
+    <div id="panel-fav" style="display:none;">
+      <div id="favList"><div class="empty">★ボタンでお気に入り登録できます</div></div>
+      <div class="btn-row" style="margin-top:10px;">
+        <button onclick="loadFavs()"><i class="ti ti-list" aria-hidden="true"></i> お気に入りをリストに追加</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 数量入力モーダル -->
+<div class="qty-modal-bg" id="qtyModal">
+  <div class="qty-modal">
+    <h3>数量を入力</h3>
+    <p class="code-label" id="modalCode"></p>
+    <input type="number" id="modalQty" min="1" value="1" />
+    <div class="modal-btns">
+      <button onclick="confirmModal()"><i class="ti ti-check" aria-hidden="true"></i> 追加</button>
+      <button onclick="closeModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+let items = [];
+let favs = JSON.parse(localStorage.getItem('hds_favs2') || '[]');
+let stream = null;
+let animFrame = null;
+let pendingCode = null;
+let lastScanned = null;
+let lastScannedTime = 0;
+
+function startScan() {
+  const wrap = document.getElementById('scannerWrap');
+  const video = document.getElementById('video');
+  wrap.style.display = 'block';
+  document.getElementById('startBtn').style.display = 'none';
+  document.getElementById('stopBtn').style.display = '';
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(s => {
+      stream = s;
+      video.srcObject = s;
+      video.play();
+      video.addEventListener('loadedmetadata', scanLoop);
+    })
+    .catch(() => {
+      alert('カメラへのアクセスが許可されませんでした。\nブラウザの設定でカメラを許可してください。');
+      stopScan();
+    });
+}
+
+function stopScan() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+  document.getElementById('scannerWrap').style.display = 'none';
+  document.getElementById('startBtn').style.display = '';
+  document.getElementById('stopBtn').style.display = 'none';
+}
+
+function scanLoop() {
+  const video = document.getElementById('video');
+  if (!stream) return;
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 320;
+  canvas.height = video.videoHeight || 320;
+  const ctx = canvas.getContext('2d');
+
+  function tick() {
+    if (!stream) return;
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+      if (code) {
+        const now = Date.now();
+        if (code.data !== lastScanned || now - lastScannedTime > 3000) {
+          lastScanned = code.data;
+          lastScannedTime = now;
+          onQRDetected(code.data);
+        }
+      }
+    }
+    animFrame = requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+function onQRDetected(data) {
+  const banner = document.getElementById('resultBanner');
+  const resultText = document.getElementById('resultText');
+  resultText.textContent = '読み取り: ' + data;
+  banner.style.display = 'flex';
+  setTimeout(() => { banner.style.display = 'none'; }, 3000);
+  pendingCode = data;
+  document.getElementById('modalCode').textContent = data;
+  document.getElementById('modalQty').value = '1';
+  document.getElementById('qtyModal').style.display = 'flex';
+  setTimeout(() => { document.getElementById('modalQty').focus(); document.getElementById('modalQty').select(); }, 100);
+}
+
+function confirmModal() {
+  if (!pendingCode) return;
+  const qty = parseInt(document.getElementById('modalQty').value) || 1;
+  addItem(pendingCode, qty, '', '');
+  pendingCode = null;
+  closeModal();
+}
+
+function closeModal() {
+  document.getElementById('qtyModal').style.display = 'none';
+}
+
+document.getElementById('modalQty').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmModal();
+  if (e.key === 'Escape') closeModal();
+});
+
+function addItem(code, qty, name, note) {
+  const existing = items.find(i => i.code === code);
+  if (existing) {
+    existing.qty += qty;
+    showToast('数量を更新しました: ' + code + ' ×' + existing.qty);
+  } else {
+    items.push({ code, qty, name: name || '', note: note || '', id: Date.now() + Math.random() });
+  }
+  render();
+}
+
+function addItemManual() {
+  const code = document.getElementById('codeInput').value.trim();
+  const qty = parseInt(document.getElementById('qtyInput').value) || 1;
+  const name = document.getElementById('nameInput').value.trim();
+  const note = document.getElementById('noteInput').value.trim();
+  if (!code) { document.getElementById('codeInput').focus(); return; }
+  addItem(code, qty, name, note);
+  document.getElementById('codeInput').value = '';
+  document.getElementById('qtyInput').value = '1';
+  document.getElementById('nameInput').value = '';
+  document.getElementById('noteInput').value = '';
+  document.getElementById('codeInput').focus();
+}
+
+function showToast(msg) {
+  const b = document.getElementById('resultBanner');
+  document.getElementById('resultText').textContent = msg;
+  b.style.display = 'flex';
+  setTimeout(() => { b.style.display = 'none'; }, 2000);
+}
+
+function removeItem(id) { items = items.filter(i => i.id !== id); render(); }
+function updateQty(id, val) { const it = items.find(i => i.id === id); if (it) { it.qty = parseInt(val) || 1; render(); } }
+
+function toggleFav(item) {
+  const ex = favs.find(f => f.code === item.code);
+  if (ex) favs = favs.filter(f => f.code !== item.code);
+  else favs.push({ code: item.code, name: item.name, note: item.note });
+  localStorage.setItem('hds_favs2', JSON.stringify(favs));
+  render(); renderFavs();
+}
+function isFav(code) { return !!favs.find(f => f.code === code); }
+function loadFavs() {
+  if (!favs.length) return;
+  favs.forEach(f => { if (!items.find(i => i.code === f.code)) items.push({ code: f.code, qty: 1, name: f.name, note: f.note, id: Date.now() + Math.random() }); });
+  showTab('copy'); render();
+}
+function clearAll() { if (!items.length) return; if (confirm('リストをクリアしますか？')) { items = []; render(); } }
+
+function copyToClipboard() {
+  const text = document.getElementById('copyText').innerText;
+  if (text.includes('追加する')) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target.closest('button');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="ti ti-check"></i> コピーしました';
+    setTimeout(() => { btn.innerHTML = orig; }, 1500);
+  });
+}
+
+function showTab(name) {
+  document.getElementById('panel-copy').style.display = name === 'copy' ? '' : 'none';
+  document.getElementById('panel-fav').style.display = name === 'fav' ? '' : 'none';
+  document.getElementById('tab-copy').className = 'tab' + (name === 'copy' ? ' active' : '');
+  document.getElementById('tab-fav').className = 'tab' + (name === 'fav' ? ' active' : '');
+  if (name === 'fav') renderFavs();
+}
+
+function renderFavs() {
+  const el = document.getElementById('favList');
+  document.getElementById('favCount').textContent = favs.length ? '(' + favs.length + ')' : '';
+  if (!favs.length) { el.innerHTML = '<div class="empty">★ボタンでお気に入り登録できます</div>'; return; }
+  el.innerHTML = '<div style="display:flex;flex-direction:column;gap:6px;">' + favs.map(f => `
+    <div style="display:flex;align-items:center;gap:8px;font-size:14px;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary);">
+      <span style="font-family:var(--font-mono);font-size:13px;color:var(--color-text-secondary);min-width:80px;">${f.code}</span>
+      <span style="flex:1;">${f.name || '（名前なし）'}</span>
+      <button class="icon-btn" onclick="removeFav('${f.code}')" aria-label="削除"><i class="ti ti-trash"></i></button>
+    </div>`).join('') + '</div>';
+}
+function removeFav(code) { favs = favs.filter(f => f.code !== code); localStorage.setItem('hds_favs2', JSON.stringify(favs)); renderFavs(); render(); }
+
+function render() {
+  document.getElementById('countBadge').textContent = items.length + '件';
+  const body = document.getElementById('orderBody');
+  if (!items.length) {
+    body.innerHTML = '<div class="empty">QRコードを読み取るか、商品番号を入力してください</div>';
+    document.getElementById('copyText').textContent = 'リストに商品を追加するとここに表示されます';
+    return;
+  }
+  body.innerHTML = `<table class="order-table"><thead><tr>
+    <th>商品番号</th><th>商品名</th><th>備考</th><th>数量</th><th></th>
+  </tr></thead><tbody>` +
+  items.map(item => `<tr>
+    <td style="font-family:var(--font-mono);font-size:13px;">${item.code}</td>
+    <td>${item.name || '<span style="color:var(--color-text-tertiary)">—</span>'}</td>
+    <td style="font-size:12px;color:var(--color-text-secondary);">${item.note || ''}</td>
+    <td><input class="qty-input" type="number" min="1" value="${item.qty}" onchange="updateQty(${item.id}, this.value)" /></td>
+    <td>
+      <button class="icon-btn ${isFav(item.code) ? 'fav' : ''}" onclick='toggleFav(${JSON.stringify(item).replace(/'/g,"&#39;")})' aria-label="お気に入り"><i class="ti ti-star"></i></button>
+      <button class="icon-btn" onclick="removeItem(${item.id})" aria-label="削除"><i class="ti ti-trash"></i></button>
+    </td>
+  </tr>`).join('') + '</tbody></table>';
+  document.getElementById('copyText').textContent = items.map(i => `${i.code}　×${i.qty}${i.name ? '　' + i.name : ''}`).join('\n');
+}
+
+document.getElementById('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('qtyInput').focus(); } });
+document.getElementById('qtyInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('nameInput').focus(); } });
+document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addItemManual(); } });
+document.getElementById('noteInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addItemManual(); } });
+render(); renderFavs();
+</script>
