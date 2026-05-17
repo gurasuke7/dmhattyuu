@@ -14,6 +14,8 @@ body {
   font-size: 15px;
   padding-bottom: 2rem;
 }
+
+/* ① タイトルのみ・固定しない */
 h1 {
   background: #1a1a1a;
   color: #fff;
@@ -21,14 +23,8 @@ h1 {
   font-size: 16px;
   font-weight: 600;
   letter-spacing: 0.03em;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
-h1 span { font-size: 12px; font-weight: 400; opacity: 0.6; margin-left: auto; }
+
 .container { max-width: 640px; margin: 0 auto; padding: 12px 12px 0; }
 .card {
   background: #fff;
@@ -50,11 +46,45 @@ h1 span { font-size: 12px; font-weight: 400; opacity: 0.6; margin-left: auto; }
 }
 .card-title svg { width:14px; height:14px; flex-shrink:0; }
 
-/* QRスキャナー */
+/* ② カメラ ON/OFF トグル */
+.cam-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.toggle-label { font-size: 14px; color: #444; }
+.toggle-switch {
+  position: relative;
+  width: 52px; height: 28px;
+  flex-shrink: 0;
+}
+.toggle-switch input { display: none; }
+.toggle-slider {
+  position: absolute; inset: 0;
+  background: #ccc;
+  border-radius: 28px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 22px; height: 22px;
+  left: 3px; top: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+}
+.toggle-switch input:checked + .toggle-slider { background: #1a1a1a; }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(24px); }
+.cam-status { font-size: 13px; color: #aaa; }
+.cam-status.on { color: #2a8a4a; font-weight: 600; }
+
 #scannerWrap {
   position: relative;
-  width: 100%;
-  max-width: 340px;
+  width: 100%; max-width: 340px;
   margin: 0 auto;
   border-radius: 10px;
   overflow: hidden;
@@ -78,6 +108,7 @@ h1 span { font-size: 12px; font-weight: 400; opacity: 0.6; margin-left: auto; }
   animation: scanMove 2s linear infinite;
 }
 @keyframes scanMove { 0%{top:21%} 50%{top:79%} 100%{top:21%} }
+
 .result-toast {
   background: #e8f7f0;
   border: 1px solid #b2dfc9;
@@ -90,9 +121,7 @@ h1 span { font-size: 12px; font-weight: 400; opacity: 0.6; margin-left: auto; }
   align-items: center;
   gap: 8px;
 }
-.btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
-/* ボタン */
 button {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 9px 14px;
@@ -113,9 +142,7 @@ button.primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
 button.primary:hover { background: #333; }
 button.danger { background: #fff0f0; color: #c0392b; border-color: #f5c0bb; }
 button svg { width:15px; height:15px; }
-#stopBtn { display: none; }
 
-/* 入力 */
 input[type="text"], input[type="number"] {
   width: 100%;
   padding: 10px 12px;
@@ -133,18 +160,44 @@ input:focus { border-color: #1a1a1a; background: #fff; }
 .input-row input[type="text"] { flex: 3; }
 .input-row input[type="number"] { flex: 1; min-width: 70px; }
 
-/* テーブル */
+/* 注文リスト */
 .order-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .order-table th {
   text-align: left; font-size: 11px; font-weight: 600;
   color: #999; letter-spacing: 0.06em; text-transform: uppercase;
-  padding: 0 6px 8px 0;
+  padding: 0 4px 8px 0;
   border-bottom: 1px solid #eee;
 }
-.order-table td { padding: 9px 6px 9px 0; border-bottom: 1px solid #f0f0ec; vertical-align: middle; }
+.order-table td {
+  padding: 8px 4px 8px 0;
+  border-bottom: 1px solid #f0f0ec;
+  vertical-align: top;
+}
 .order-table tr:last-child td { border-bottom: none; }
-.code-cell { font-family: 'Courier New', monospace; font-size: 13px; color: #333; }
-.qty-input-cell { width: 64px; }
+.code-text { font-family: 'Courier New', monospace; font-size: 13px; color: #333; margin-bottom: 3px; }
+.name-text { font-size: 12px; color: #777; margin-bottom: 3px; }
+
+/* ④ 個別コピーボタン */
+.copy-btn-sm {
+  padding: 3px 8px;
+  font-size: 11px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+  background: #f8f8f4;
+  color: #555;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: background 0.1s;
+  white-space: nowrap;
+}
+.copy-btn-sm:hover { background: #efefeb; }
+.copy-btn-sm.copied { background: #e8f7f0; border-color: #b2dfc9; color: #1a6641; }
+.copy-btn-sm svg { width: 11px; height: 11px; }
+
+.qty-wrap { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
 .qty-input {
   width: 64px; text-align: center;
   padding: 5px 4px; font-size: 14px;
@@ -153,12 +206,14 @@ input:focus { border-color: #1a1a1a; background: #fff; }
   font-family: inherit;
 }
 .icon-btn {
-  padding: 6px; border: none; background: none; cursor: pointer;
+  padding: 5px; border: none; background: none; cursor: pointer;
   color: #bbb; border-radius: 6px;
 }
 .icon-btn:hover { background: #f5f5f0; color: #555; }
 .icon-btn.fav { color: #e8a020; }
 .icon-btn svg { width:16px; height:16px; display:block; }
+.action-col { display: flex; flex-direction: column; align-items: center; gap: 2px; padding-top: 2px; }
+
 .empty { text-align: center; color: #bbb; font-size: 14px; padding: 2rem 0; }
 .badge {
   background: #e8f0fd; color: #2a5abf;
@@ -166,7 +221,6 @@ input:focus { border-color: #1a1a1a; background: #fff; }
   border-radius: 999px; padding: 2px 10px;
 }
 
-/* コピーエリア */
 .copy-area {
   background: #f8f8f4;
   border-radius: 8px;
@@ -182,8 +236,8 @@ input:focus { border-color: #1a1a1a; background: #fff; }
   border: 1px solid #eee;
 }
 .hint { font-size: 12px; color: #aaa; margin-top: 8px; line-height: 1.6; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
-/* タブ */
 .tab-row { display: flex; gap: 4px; margin-bottom: 14px; }
 .tab {
   padding: 7px 14px; font-size: 13px;
@@ -192,7 +246,6 @@ input:focus { border-color: #1a1a1a; background: #fff; }
 }
 .tab.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
 
-/* お気に入り */
 .fav-item {
   display: flex; align-items: center; gap: 8px;
   font-size: 14px; padding: 8px 0;
@@ -202,7 +255,7 @@ input:focus { border-color: #1a1a1a; background: #fff; }
 .fav-code { font-family: 'Courier New', monospace; font-size: 13px; color: #888; min-width: 90px; }
 .fav-name { flex: 1; }
 
-/* 数量モーダル */
+/* ③ QR読み取り後モーダル */
 .modal-bg {
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.45);
@@ -211,43 +264,49 @@ input:focus { border-color: #1a1a1a; background: #fff; }
 }
 .modal {
   background: #fff; border-radius: 14px;
-  padding: 24px; width: 100%; max-width: 320px;
+  padding: 24px; width: 100%; max-width: 340px;
   box-shadow: 0 8px 40px rgba(0,0,0,0.18);
 }
-.modal h3 { font-size: 17px; margin-bottom: 4px; }
-.modal .modal-code { font-family: 'Courier New', monospace; color: #888; font-size: 13px; margin-bottom: 16px; }
-.modal input { margin-bottom: 14px; font-size: 20px; text-align: center; }
-.modal .modal-btns { display: flex; gap: 8px; }
-.modal .modal-btns button { flex: 1; }
+.modal h3 { font-size: 17px; margin-bottom: 16px; font-weight: 600; }
+.modal-field { margin-bottom: 12px; }
+.modal-field label {
+  font-size: 11px; font-weight: 600; color: #999;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  display: block; margin-bottom: 4px;
+}
+.modal-field .val {
+  font-size: 15px; color: #1a1a1a;
+  background: #f5f5f0; border-radius: 8px;
+  padding: 10px 12px;
+}
+.modal-field .val.code { font-family: 'Courier New', monospace; font-size: 14px; }
+.modal input[type="number"] { margin-bottom: 0; font-size: 20px; text-align: center; }
+.modal .modal-btns { display: flex; gap: 8px; margin-top: 16px; }
+.modal .modal-btns button { flex: 1; justify-content: center; }
 </style>
 </head>
 <body>
 
-<h1>
-  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><path d="M11 13h6M14 11v6" stroke-linecap="round"/></svg>
-  HEADS 注文リスト
-  <span>QRコード対応</span>
-</h1>
+<!-- ① タイトルのみ・スクロールでついてこない -->
+<h1>HEADS 注文リスト</h1>
 
 <div class="container">
 
-  <!-- QRスキャナー -->
+  <!-- QRカメラ ② ON/OFF トグル -->
   <div class="card">
     <div class="card-title">
       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="12" y="2" width="6" height="6" rx="1"/><rect x="2" y="12" width="6" height="6" rx="1"/><path d="M12 14h6M15 12v6" stroke-linecap="round"/></svg>
       QRコードで追加
     </div>
-    <div class="btn-row">
-      <button class="primary" id="startBtn" onclick="startScan()">
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3" fill="currentColor"/></svg>
-        カメラを起動
-      </button>
-      <button id="stopBtn" onclick="stopScan()">
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="12" height="12" rx="2" fill="currentColor"/></svg>
-        停止
-      </button>
+    <div class="cam-toggle">
+      <label class="toggle-switch">
+        <input type="checkbox" id="camToggle" onchange="toggleCamera(this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+      <span class="toggle-label">カメラ</span>
+      <span class="cam-status" id="camStatus">OFF</span>
     </div>
-    <div id="scannerWrap" style="margin-top:12px;">
+    <div id="scannerWrap">
       <video id="video" playsinline></video>
       <div class="scan-overlay">
         <div class="scan-frame"></div>
@@ -273,7 +332,7 @@ input:focus { border-color: #1a1a1a; background: #fff; }
     <div class="input-row">
       <input type="text" id="nameInput" placeholder="商品名（任意）" />
     </div>
-    <button onclick="addItemManual()" style="margin-top:4px;">
+    <button onclick="addItemManual()">
       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="4" x2="10" y2="16"/><line x1="4" y1="10" x2="16" y2="10"/></svg>
       追加
     </button>
@@ -296,13 +355,12 @@ input:focus { border-color: #1a1a1a; background: #fff; }
       <button class="tab active" onclick="showTab('copy')" id="tab-copy">コピー用リスト</button>
       <button class="tab" onclick="showTab('fav')" id="tab-fav">お気に入り <span id="favCount"></span></button>
     </div>
-
     <div id="panel-copy">
       <div class="copy-area" id="copyText">リストに商品を追加するとここに表示されます</div>
       <div class="btn-row">
         <button onclick="copyToClipboard()">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="2" width="10" height="13" rx="2"/><rect x="2" y="5" width="10" height="13" rx="2" fill="white"/></svg>
-          コピー
+          全体コピー
         </button>
         <button onclick="loadFavs()">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="10,3 12.5,8 18,8.5 14,12.5 15.5,18 10,15 4.5,18 6,12.5 2,8.5 7.5,8"/></svg>
@@ -313,9 +371,8 @@ input:focus { border-color: #1a1a1a; background: #fff; }
           クリア
         </button>
       </div>
-      <p class="hint">HEADSの「かんたん注文」ページを開き、このリストを参考に入力してください</p>
+      <p class="hint">各商品の「番号コピー」「数量コピー」でかんたん注文ページに1件ずつ入力できます</p>
     </div>
-
     <div id="panel-fav" style="display:none;">
       <div id="favList"><div class="empty">★ボタンでお気に入り登録できます</div></div>
       <button onclick="loadFavs()" style="margin-top:10px;">
@@ -327,16 +384,26 @@ input:focus { border-color: #1a1a1a; background: #fff; }
 
 </div>
 
-<!-- 数量モーダル -->
+<!-- ③ QR読み取り後モーダル -->
 <div class="modal-bg" id="qtyModal">
   <div class="modal">
-    <h3>数量を入力</h3>
-    <p class="modal-code" id="modalCode"></p>
-    <input type="number" id="modalQty" min="1" value="1" />
+    <h3>📦 商品確認・発注数入力</h3>
+    <div class="modal-field">
+      <label>商品番号</label>
+      <div class="val code" id="modalCode">—</div>
+    </div>
+    <div class="modal-field">
+      <label>商品名</label>
+      <div class="val" id="modalName">—</div>
+    </div>
+    <div class="modal-field">
+      <label>発注個数</label>
+      <input type="number" id="modalQty" min="1" value="1" />
+    </div>
     <div class="modal-btns">
       <button class="primary" onclick="confirmModal()">
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><polyline points="4,10 8,14 16,6"/></svg>
-        追加
+        注文リストへ
       </button>
       <button onclick="closeModal()">キャンセル</button>
     </div>
@@ -347,12 +414,23 @@ input:focus { border-color: #1a1a1a; background: #fff; }
 let items = [];
 let favs = JSON.parse(localStorage.getItem('heads_favs') || '[]');
 let stream = null, animFrame = null;
-let pendingCode = null, lastScanned = null, lastScannedTime = 0;
+let pendingCode = null, pendingName = null;
+let lastScanned = null, lastScannedTime = 0;
+
+// ② カメラ ON/OFF
+function toggleCamera(on) {
+  const status = document.getElementById('camStatus');
+  if (on) {
+    status.textContent = 'ON'; status.className = 'cam-status on';
+    startScan();
+  } else {
+    status.textContent = 'OFF'; status.className = 'cam-status';
+    stopScan();
+  }
+}
 
 function startScan() {
   document.getElementById('scannerWrap').style.display = 'block';
-  document.getElementById('startBtn').style.display = 'none';
-  document.getElementById('stopBtn').style.display = '';
   navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
     .then(s => {
       stream = s;
@@ -363,7 +441,8 @@ function startScan() {
     })
     .catch(() => {
       alert('カメラへのアクセスが許可されませんでした。\nブラウザの設定でカメラを許可してください。');
-      stopScan();
+      document.getElementById('camToggle').checked = false;
+      toggleCamera(false);
     });
 }
 
@@ -371,8 +450,6 @@ function stopScan() {
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
   if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
   document.getElementById('scannerWrap').style.display = 'none';
-  document.getElementById('startBtn').style.display = '';
-  document.getElementById('stopBtn').style.display = 'none';
 }
 
 function scanLoop() {
@@ -389,7 +466,7 @@ function scanLoop() {
       const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
       if (code) {
         const now = Date.now();
-        if (code.data !== lastScanned || now - lastScannedTime > 3000) {
+        if (code.data !== lastScanned || now - lastScannedTime > 4000) {
           lastScanned = code.data;
           lastScannedTime = now;
           onQRDetected(code.data);
@@ -401,22 +478,37 @@ function scanLoop() {
   tick();
 }
 
+// ③ QR読み取り：「商品番号,商品名」形式を分解してモーダル表示
 function onQRDetected(data) {
-  showToast('読み取り: ' + data);
-  pendingCode = data;
-  document.getElementById('modalCode').textContent = data;
+  const parts = data.split(',');
+  const code = (parts[0] || '').trim();
+  const name = (parts[1] || '').trim();
+  pendingCode = code;
+  pendingName = name;
+  document.getElementById('modalCode').textContent = code || '（不明）';
+  document.getElementById('modalName').textContent = name || '（未設定）';
   document.getElementById('modalQty').value = '1';
   document.getElementById('qtyModal').style.display = 'flex';
-  setTimeout(() => { document.getElementById('modalQty').focus(); document.getElementById('modalQty').select(); }, 100);
+  setTimeout(() => {
+    document.getElementById('modalQty').focus();
+    document.getElementById('modalQty').select();
+  }, 100);
 }
 
 function confirmModal() {
   if (!pendingCode) return;
-  addItem(pendingCode, parseInt(document.getElementById('modalQty').value) || 1, '');
-  pendingCode = null;
+  const qty = parseInt(document.getElementById('modalQty').value) || 1;
+  addItem(pendingCode, qty, pendingName || '');
+  pendingCode = null; pendingName = null;
   closeModal();
+  showToast('注文リストに追加しました');
 }
-function closeModal() { document.getElementById('qtyModal').style.display = 'none'; }
+
+function closeModal() {
+  document.getElementById('qtyModal').style.display = 'none';
+  // キャンセル時はスキャン再開できるようlastScannedをリセット
+  lastScanned = null;
+}
 
 document.getElementById('modalQty').addEventListener('keydown', e => {
   if (e.key === 'Enter') confirmModal();
@@ -425,8 +517,12 @@ document.getElementById('modalQty').addEventListener('keydown', e => {
 
 function addItem(code, qty, name) {
   const ex = items.find(i => i.code === code);
-  if (ex) { ex.qty += qty; showToast('数量を更新: ' + code + ' ×' + ex.qty); }
-  else items.push({ code, qty, name: name || '', id: Date.now() + Math.random() });
+  if (ex) {
+    ex.qty += qty;
+    showToast('数量を更新: ' + code + ' ×' + ex.qty);
+  } else {
+    items.push({ code, qty, name: name || '', id: Date.now() + Math.random() });
+  }
   render();
 }
 
@@ -450,7 +546,30 @@ function showToast(msg) {
 }
 
 function removeItem(id) { items = items.filter(i => i.id !== id); render(); }
-function updateQty(id, val) { const it = items.find(i => i.id === id); if (it) { it.qty = parseInt(val) || 1; render(); } }
+function updateQty(id, val) {
+  const it = items.find(i => i.id === id);
+  if (it) { it.qty = parseInt(val) || 1; render(); }
+}
+
+// ④ 個別コピー
+function copyText(text, btnEl) {
+  const doFallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    flashCopied(btnEl);
+  };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => flashCopied(btnEl)).catch(doFallback);
+  } else { doFallback(); }
+}
+
+function flashCopied(btnEl) {
+  const orig = btnEl.innerHTML;
+  btnEl.classList.add('copied');
+  btnEl.innerHTML = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4,10 8,14 16,6"/></svg> コピー済`;
+  setTimeout(() => { btnEl.innerHTML = orig; btnEl.classList.remove('copied'); }, 1500);
+}
 
 function toggleFav(code, name) {
   if (favs.find(f => f.code === code)) favs = favs.filter(f => f.code !== code);
@@ -459,25 +578,37 @@ function toggleFav(code, name) {
   render(); renderFavs();
 }
 function isFav(code) { return !!favs.find(f => f.code === code); }
-function removeFav(code) { favs = favs.filter(f => f.code !== code); localStorage.setItem('heads_favs', JSON.stringify(favs)); renderFavs(); render(); }
+function removeFav(code) {
+  favs = favs.filter(f => f.code !== code);
+  localStorage.setItem('heads_favs', JSON.stringify(favs));
+  renderFavs(); render();
+}
 
 function loadFavs() {
   if (!favs.length) return;
-  favs.forEach(f => { if (!items.find(i => i.code === f.code)) items.push({ code: f.code, qty: 1, name: f.name, id: Date.now() + Math.random() }); });
+  favs.forEach(f => {
+    if (!items.find(i => i.code === f.code))
+      items.push({ code: f.code, qty: 1, name: f.name, id: Date.now() + Math.random() });
+  });
   showTab('copy'); render();
 }
-function clearAll() { if (!items.length) return; if (confirm('リストをクリアしますか？')) { items = []; render(); } }
+
+function clearAll() {
+  if (!items.length) return;
+  if (confirm('リストをクリアしますか？')) { items = []; render(); }
+}
 
 function copyToClipboard() {
-  const text = document.getElementById('copyText').innerText;
   if (!items.length) return;
-  navigator.clipboard.writeText(text).then(() => {
-    showToast('クリップボードにコピーしました');
-  }).catch(() => {
+  const text = items.map(i => `${i.code}  ×${i.qty}${i.name ? '  ' + i.name : ''}`).join('\n');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => showToast('クリップボードにコピーしました')).catch(() => {});
+  } else {
     const ta = document.createElement('textarea');
-    ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
     showToast('コピーしました');
-  });
+  }
 }
 
 function showTab(name) {
@@ -492,39 +623,58 @@ function renderFavs() {
   const el = document.getElementById('favList');
   document.getElementById('favCount').textContent = favs.length ? '(' + favs.length + ')' : '';
   if (!favs.length) { el.innerHTML = '<div class="empty">★ボタンでお気に入り登録できます</div>'; return; }
+  const trashSVG = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="4,6 16,6"/><path d="M7 6V4h6v2"/><rect x="5" y="6" width="10" height="12" rx="1"/></svg>`;
   el.innerHTML = favs.map(f => `
     <div class="fav-item">
       <span class="fav-code">${f.code}</span>
       <span class="fav-name">${f.name || '—'}</span>
-      <button class="icon-btn" onclick="removeFav('${f.code}')" aria-label="削除">
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="4,6 16,6"/><path d="M7 6V4h6v2"/><rect x="5" y="6" width="10" height="12" rx="1"/></svg>
-      </button>
+      <button class="icon-btn" onclick="removeFav('${f.code.replace(/'/g,"\\'")}')">${trashSVG}</button>
     </div>`).join('');
 }
+
+const copySVG = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="2" width="10" height="13" rx="2"/><rect x="2" y="5" width="10" height="13" rx="2" fill="white"/></svg>`;
+const starSVG = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="10,3 12.5,8 18,8.5 14,12.5 15.5,18 10,15 4.5,18 6,12.5 2,8.5 7.5,8"/></svg>`;
+const trashSVG = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="4,6 16,6"/><path d="M7 6V4h6v2"/><rect x="5" y="6" width="10" height="12" rx="1"/></svg>`;
 
 function render() {
   document.getElementById('countBadge').textContent = items.length + '件';
   const body = document.getElementById('orderBody');
+
   if (!items.length) {
     body.innerHTML = '<div class="empty">QRコードを読み取るか、商品番号を入力してください</div>';
     document.getElementById('copyText').textContent = 'リストに商品を追加するとここに表示されます';
     return;
   }
-  const starSVG = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="10,3 12.5,8 18,8.5 14,12.5 15.5,18 10,15 4.5,18 6,12.5 2,8.5 7.5,8"/></svg>`;
-  const trashSVG = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="4,6 16,6"/><path d="M7 6V4h6v2"/><rect x="5" y="6" width="10" height="12" rx="1"/></svg>`;
+
   body.innerHTML = `<table class="order-table"><thead><tr>
-    <th>商品番号</th><th>商品名</th><th>数量</th><th></th>
+    <th>商品番号 / 商品名</th><th>数量</th><th></th>
   </tr></thead><tbody>` +
-  items.map(it => `<tr>
-    <td class="code-cell">${it.code}</td>
-    <td style="font-size:13px;color:#666;">${it.name || '—'}</td>
-    <td class="qty-input-cell"><input class="qty-input" type="number" min="1" value="${it.qty}" onchange="updateQty(${it.id}, this.value)"/></td>
-    <td style="display:flex;gap:2px;align-items:center;">
-      <button class="icon-btn ${isFav(it.code) ? 'fav' : ''}" onclick="toggleFav('${it.code}','${it.name}')" aria-label="お気に入り">${starSVG}</button>
-      <button class="icon-btn" onclick="removeItem(${it.id})" aria-label="削除">${trashSVG}</button>
+  items.map(it => {
+    const safeCode = it.code.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const safeName = (it.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<tr>
+    <td>
+      <div class="code-text">${it.code}</div>
+      ${it.name ? `<div class="name-text">${it.name}</div>` : ''}
+      <button class="copy-btn-sm" onclick="copyText('${safeCode}', this)">${copySVG} 番号コピー</button>
     </td>
-  </tr>`).join('') + '</tbody></table>';
-  document.getElementById('copyText').textContent = items.map(i => `${i.code}  ×${i.qty}${i.name ? '  ' + i.name : ''}`).join('\n');
+    <td>
+      <div class="qty-wrap">
+        <input class="qty-input" type="number" min="1" value="${it.qty}" onchange="updateQty(${it.id}, this.value)"/>
+        <button class="copy-btn-sm" onclick="copyText(String(${it.qty}), this)">${copySVG} 数量コピー</button>
+      </div>
+    </td>
+    <td>
+      <div class="action-col">
+        <button class="icon-btn ${isFav(it.code) ? 'fav' : ''}" onclick="toggleFav('${safeCode}','${safeName}')" title="お気に入り">${starSVG}</button>
+        <button class="icon-btn" onclick="removeItem(${it.id})" title="削除">${trashSVG}</button>
+      </div>
+    </td>
+  </tr>`;
+  }).join('') + '</tbody></table>';
+
+  document.getElementById('copyText').textContent =
+    items.map(i => `${i.code}  ×${i.qty}${i.name ? '  ' + i.name : ''}`).join('\n');
 }
 
 document.getElementById('codeInput').addEventListener('keydown', e => { if(e.key==='Enter'){e.preventDefault();document.getElementById('qtyInput').focus();}});
