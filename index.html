@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEADS 注文リスト</title>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  background: #f5f5f0;
+  color: #1a1a1a;
+  font-size: 15px;
+  padding-bottom: 2rem;
+}
+h1 {
+  background: #1a1a1a;
+  color: #fff;
+  padding: 14px 16px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+h1 span { font-size: 12px; font-weight: 400; opacity: 0.6; margin-left: auto; }
+.container { max-width: 640px; margin: 0 auto; padding: 12px 12px 0; }
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border: 1px solid #e8e8e4;
+}
+.card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.card-title svg { width:14px; height:14px; flex-shrink:0; }
+
+/* QRスキャナー */
+#scannerWrap {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 1;
+  display: none;
+}
+#scannerWrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scan-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.scan-frame {
+  width: 58%; height: 58%;
+  border: 2.5px solid #fff;
+  border-radius: 10px;
+  box-shadow: 0 0 0 2000px rgba(0,0,0,0.5);
+}
+.scan-line {
+  position: absolute; left: 21%; right: 21%;
+  height: 2px;
+  background: rgba(100,220,180,0.9);
+  border-radius: 2px;
+  animation: scanMove 2s linear infinite;
+}
+@keyframes scanMove { 0%{top:21%} 50%{top:79%} 100%{top:21%} }
+.result-toast {
+  background: #e8f7f0;
+  border: 1px solid #b2dfc9;
+  color: #1a6641;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  margin-top: 10px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* ボタン */
+button {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1px solid #d0d0cc;
+  background: #fff;
+  color: #1a1a1a;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+  transition: background 0.1s, transform 0.08s;
+  white-space: nowrap;
+}
+button:hover { background: #f5f5f0; }
+button:active { transform: scale(0.97); }
+button.primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+button.primary:hover { background: #333; }
+button.danger { background: #fff0f0; color: #c0392b; border-color: #f5c0bb; }
+button svg { width:15px; height:15px; }
+#stopBtn { display: none; }
+
+/* 入力 */
+input[type="text"], input[type="number"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d8d8d4;
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  background: #fafaf8;
+  color: #1a1a1a;
+  outline: none;
+  transition: border 0.15s;
+}
+input:focus { border-color: #1a1a1a; background: #fff; }
+.input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.input-row input[type="text"] { flex: 3; }
+.input-row input[type="number"] { flex: 1; min-width: 70px; }
+
+/* テーブル */
+.order-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.order-table th {
+  text-align: left; font-size: 11px; font-weight: 600;
+  color: #999; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 0 6px 8px 0;
+  border-bottom: 1px solid #eee;
+}
+.order-table td { padding: 9px 6px 9px 0; border-bottom: 1px solid #f0f0ec; vertical-align: middle; }
+.order-table tr:last-child td { border-bottom: none; }
+.code-cell { font-family: 'Courier New', monospace; font-size: 13px; color: #333; }
+.qty-input-cell { width: 64px; }
+.qty-input {
+  width: 64px; text-align: center;
+  padding: 5px 4px; font-size: 14px;
+  border: 1px solid #ddd; border-radius: 6px;
+  background: #fafaf8; color: #1a1a1a;
+  font-family: inherit;
+}
+.icon-btn {
+  padding: 6px; border: none; background: none; cursor: pointer;
+  color: #bbb; border-radius: 6px;
+}
+.icon-btn:hover { background: #f5f5f0; color: #555; }
+.icon-btn.fav { color: #e8a020; }
+.icon-btn svg { width:16px; height:16px; display:block; }
+.empty { text-align: center; color: #bbb; font-size: 14px; padding: 2rem 0; }
+.badge {
+  background: #e8f0fd; color: #2a5abf;
+  font-size: 11px; font-weight: 600;
+  border-radius: 999px; padding: 2px 10px;
+}
+
+/* コピーエリア */
+.copy-area {
+  background: #f8f8f4;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #444;
+  white-space: pre-wrap;
+  word-break: break-all;
+  min-height: 56px;
+  margin-bottom: 10px;
+  line-height: 1.9;
+  border: 1px solid #eee;
+}
+.hint { font-size: 12px; color: #aaa; margin-top: 8px; line-height: 1.6; }
+
+/* タブ */
+.tab-row { display: flex; gap: 4px; margin-bottom: 14px; }
+.tab {
+  padding: 7px 14px; font-size: 13px;
+  border-radius: 8px; border: 1px solid #ddd;
+  background: none; color: #888; cursor: pointer;
+}
+.tab.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+
+/* お気に入り */
+.fav-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; padding: 8px 0;
+  border-bottom: 1px solid #f0f0ec;
+}
+.fav-item:last-child { border-bottom: none; }
+.fav-code { font-family: 'Courier New', monospace; font-size: 13px; color: #888; min-width: 90px; }
+.fav-name { flex: 1; }
+
+/* 数量モーダル */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: none; align-items: center; justify-content: center;
+  z-index: 1000; padding: 16px;
+}
+.modal {
+  background: #fff; border-radius: 14px;
+  padding: 24px; width: 100%; max-width: 320px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+}
+.modal h3 { font-size: 17px; margin-bottom: 4px; }
+.modal .modal-code { font-family: 'Courier New', monospace; color: #888; font-size: 13px; margin-bottom: 16px; }
+.modal input { margin-bottom: 14px; font-size: 20px; text-align: center; }
+.modal .modal-btns { display: flex; gap: 8px; }
+.modal .modal-btns button { flex: 1; }
+</style>
+</head>
+<body>
+
+<h1>
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><path d="M11 13h6M14 11v6" stroke-linecap="round"/></svg>
+  HEADS 注文リスト
+  <span>QRコード対応</span>
+</h1>
+
+<div class="container">
+
+  <!-- QRスキャナー -->
+  <div class="card">
+    <div class="card-title">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="12" y="2" width="6" height="6" rx="1"/><rect x="2" y="12" width="6" height="6" rx="1"/><path d="M12 14h6M15 12v6" stroke-linecap="round"/></svg>
+      QRコードで追加
+    </div>
+    <div class="btn-row">
+      <button class="primary" id="startBtn" onclick="startScan()">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3" fill="currentColor"/></svg>
+        カメラを起動
+      </button>
+      <button id="stopBtn" onclick="stopScan()">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="12" height="12" rx="2" fill="currentColor"/></svg>
+        停止
+      </button>
+    </div>
+    <div id="scannerWrap" style="margin-top:12px;">
+      <video id="video" playsinline></video>
+      <div class="scan-overlay">
+        <div class="scan-frame"></div>
+        <div class="scan-line"></div>
+      </div>
+    </div>
+    <div class="result-toast" id="resultBanner">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><polyline points="4,10 8,14 16,6"/></svg>
+      <span id="resultText"></span>
+    </div>
+  </div>
+
+  <!-- 手動入力 -->
+  <div class="card">
+    <div class="card-title">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="16" height="12" rx="2"/><path d="M6 9h2M10 9h4M6 13h4M12 13h2" stroke-linecap="round"/></svg>
+      手動で追加
+    </div>
+    <div class="input-row">
+      <input type="text" id="codeInput" placeholder="商品番号（例：A-12345）" />
+      <input type="number" id="qtyInput" value="1" min="1" placeholder="数量" />
+    </div>
+    <div class="input-row">
+      <input type="text" id="nameInput" placeholder="商品名（任意）" />
+    </div>
+    <button onclick="addItemManual()" style="margin-top:4px;">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="4" x2="10" y2="16"/><line x1="4" y1="10" x2="16" y2="10"/></svg>
+      追加
+    </button>
+    <p class="hint">※ Enterキーでも追加できます</p>
+  </div>
+
+  <!-- 注文リスト -->
+  <div class="card">
+    <div class="card-title">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h12M4 10h12M4 14h8" stroke-linecap="round"/></svg>
+      注文リスト
+      <span class="badge" id="countBadge">0件</span>
+    </div>
+    <div id="orderBody"><div class="empty">QRコードを読み取るか、商品番号を入力してください</div></div>
+  </div>
+
+  <!-- コピー＆お気に入り -->
+  <div class="card">
+    <div class="tab-row">
+      <button class="tab active" onclick="showTab('copy')" id="tab-copy">コピー用リスト</button>
+      <button class="tab" onclick="showTab('fav')" id="tab-fav">お気に入り <span id="favCount"></span></button>
+    </div>
+
+    <div id="panel-copy">
+      <div class="copy-area" id="copyText">リストに商品を追加するとここに表示されます</div>
+      <div class="btn-row">
+        <button onclick="copyToClipboard()">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="2" width="10" height="13" rx="2"/><rect x="2" y="5" width="10" height="13" rx="2" fill="white"/></svg>
+          コピー
+        </button>
+        <button onclick="loadFavs()">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="10,3 12.5,8 18,8.5 14,12.5 15.5,18 10,15 4.5,18 6,12.5 2,8.5 7.5,8"/></svg>
+          お気に入り読み込み
+        </button>
+        <button class="danger" onclick="clearAll()">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="4,6 16,6"/><path d="M7 6V4h6v2"/><rect x="5" y="6" width="10" height="12" rx="1"/></svg>
+          クリア
+        </button>
+      </div>
+      <p class="hint">HEADSの「かんたん注文」ページを開き、このリストを参考に入力してください</p>
+    </div>
+
+    <div id="panel-fav" style="display:none;">
+      <div id="favList"><div class="empty">★ボタンでお気に入り登録できます</div></div>
+      <button onclick="loadFavs()" style="margin-top:10px;">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h12M4 10h12M4 14h8" stroke-linecap="round"/></svg>
+        リストに追加
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- 数量モーダル -->
+<div class="modal-bg" id="qtyModal">
+  <div class="modal">
+    <h3>数量を入力</h3>
+    <p class="modal-code" id="modalCode"></p>
+    <input type="number" id="modalQty" min="1" value="1" />
+    <div class="modal-btns">
+      <button class="primary" onclick="confirmModal()">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><polyline points="4,10 8,14 16,6"/></svg>
+        追加
+      </button>
+      <button onclick="closeModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let items = [];
+let favs = JSON.parse(localStorage.getItem('heads_favs') || '[]');
+let stream = null, animFrame = null;
+let pendingCode = null, lastScanned = null, lastScannedTime = 0;
+
+function startScan() {
+  document.getElementById('scannerWrap').style.display = 'block';
+  document.getElementById('startBtn').style.display = 'none';
+  document.getElementById('stopBtn').style.display = '';
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(s => {
+      stream = s;
+      const video = document.getElementById('video');
+      video.srcObject = s;
+      video.play();
+      video.addEventListener('loadedmetadata', scanLoop);
+    })
+    .catch(() => {
+      alert('カメラへのアクセスが許可されませんでした。\nブラウザの設定でカメラを許可してください。');
+      stopScan();
+    });
+}
+
+function stopScan() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+  document.getElementById('scannerWrap').style.display = 'none';
+  document.getElementById('startBtn').style.display = '';
+  document.getElementById('stopBtn').style.display = 'none';
+}
+
+function scanLoop() {
+  const video = document.getElementById('video');
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 320;
+  canvas.height = video.videoHeight || 320;
+  const ctx = canvas.getContext('2d');
+  function tick() {
+    if (!stream) return;
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+      if (code) {
+        const now = Date.now();
+        if (code.data !== lastScanned || now - lastScannedTime > 3000) {
+          lastScanned = code.data;
+          lastScannedTime = now;
+          onQRDetected(code.data);
+        }
+      }
+    }
+    animFrame = requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+function onQRDetected(data) {
+  showToast('読み取り: ' + data);
+  pendingCode = data;
+  document.getElementById('modalCode').textContent = data;
+  document.getElementById('modalQty').value = '1';
+  document.getElementById('qtyModal').style.display = 'flex';
+  setTimeout(() => { document.getElementById('modalQty').focus(); document.getElementById('modalQty').select(); }, 100);
+}
+
+function confirmModal() {
+  if (!pendingCode) return;
+  addItem(pendingCode, parseInt(document.getElementById('modalQty').value) || 1, '');
+  pendingCode = null;
+  closeModal();
+}
+function closeModal() { document.getElementById('qtyModal').style.display = 'none'; }
+
+document.getElementById('modalQty').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmModal();
+  if (e.key === 'Escape') closeModal();
+});
+
+function addItem(code, qty, name) {
+  const ex = items.find(i => i.code === code);
+  if (ex) { ex.qty += qty; showToast('数量を更新: ' + code + ' ×' + ex.qty); }
+  else items.push({ code, qty, name: name || '', id: Date.now() + Math.random() });
+  render();
+}
+
+function addItemManual() {
+  const code = document.getElementById('codeInput').value.trim();
+  const qty = parseInt(document.getElementById('qtyInput').value) || 1;
+  const name = document.getElementById('nameInput').value.trim();
+  if (!code) { document.getElementById('codeInput').focus(); return; }
+  addItem(code, qty, name);
+  document.getElementById('codeInput').value = '';
+  document.getElementById('qtyInput').value = '1';
+  document.getElementById('nameInput').value = '';
+  document.getElementById('codeInput').focus();
+}
+
+function showToast(msg) {
+  const b = document.getElementById('resultBanner');
+  document.getElementById('resultText').textContent = msg;
+  b.style.display = 'flex';
+  setTimeout(() => { b.style.display = 'none'; }, 2500);
+}
+
+function removeItem(id) { items = items.filter(i => i.id !== id); render(); }
+function updateQty(id, val) { const it = items.find(i => i.id === id); if (it) { it.qty = parseInt(val) || 1; render(); } }
+
+function toggleFav(code, name) {
+  if (favs.find(f => f.code === code)) favs = favs.filter(f => f.code !== code);
+  else favs.push({ code, name });
+  localStorage.setItem('heads_favs', JSON.stringify(favs));
+  render(); renderFavs();
+}
+function isFav(code) { return !!favs.find(f => f.code === code); }
+function removeFav(code) { favs = favs.filter(f => f.code !== code); localStorage.setItem('heads_favs', JSON.stringify(favs)); renderFavs(); render(); }
+
+function loadFavs() {
+  if (!favs.length) return;
+  favs.forEach(f => { if (!items.find(i => i.code === f.code)) items.push({ code: f.code, qty: 1, name: f.name, id: Date.now() + Math.random() }); });
+  showTab('copy'); render();
+}
+function clearAll() { if (!items.length) return; if (confirm('リストをクリアしますか？')) { items = []; render(); } }
+
+function copyToClipboard() {
+  const text = document.getElementById('copyText').innerText;
+  if (!items.length) return;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('クリップボードにコピーしました');
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('コピーしました');
+  });
+}
+
+function showTab(name) {
+  document.getElementById('panel-copy').style.display = name === 'copy' ? '' : 'none';
+  document.getElementById('panel-fav').style.display = name === 'fav' ? '' : 'none';
+  document.getElementById('tab-copy').className = 'tab' + (name === 'copy' ? ' active' : '');
+  document.getElementById('tab-fav').className = 'tab' + (name === 'fav' ? ' active' : '');
+  if (name === 'fav') renderFavs();
+}
+
+function renderFavs() {
+  const el = document.getElementById('favList');
+  document.getElementById('favCount').textContent = favs.length ? '(' + favs.length + ')' : '';
+  if (!favs.length) { el.innerHTML = '<div class="empty">★ボタンでお気に入り登録できます</div>'; return; }
+  el.innerHTML = favs.map(f => `
+    <div class="fav-item">
+      <span class="fav-code">${f.code}</span>
+      <span class="fav-name">${f.name || '—'}</span>
+      <button class="icon-btn" onclick="removeFav('${f.code}')" aria-label="削除">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="4,6 16,6"/><path d="M7 6V4h6v2"/><rect x="5" y="6" width="10" height="12" rx="1"/></svg>
+      </button>
+    </div>`).join('');
+}
+
+function render() {
+  document.getElementById('countBadge').textContent = items.length + '件';
+  const body = document.getElementById('orderBody');
+  if (!items.length) {
+    body.innerHTML = '<div class="empty">QRコードを読み取るか、商品番号を入力してください</div>';
+    document.getElementById('copyText').textContent = 'リストに商品を追加するとここに表示されます';
+    return;
+  }
+  const starSVG = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="10,3 12.5,8 18,8.5 14,12.5 15.5,18 10,15 4.5,18 6,12.5 2,8.5 7.5,8"/></svg>`;
+  const trashSVG = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="4,6 16,6"/><path d="M7 6V4h6v2"/><rect x="5" y="6" width="10" height="12" rx="1"/></svg>`;
+  body.innerHTML = `<table class="order-table"><thead><tr>
+    <th>商品番号</th><th>商品名</th><th>数量</th><th></th>
+  </tr></thead><tbody>` +
+  items.map(it => `<tr>
+    <td class="code-cell">${it.code}</td>
+    <td style="font-size:13px;color:#666;">${it.name || '—'}</td>
+    <td class="qty-input-cell"><input class="qty-input" type="number" min="1" value="${it.qty}" onchange="updateQty(${it.id}, this.value)"/></td>
+    <td style="display:flex;gap:2px;align-items:center;">
+      <button class="icon-btn ${isFav(it.code) ? 'fav' : ''}" onclick="toggleFav('${it.code}','${it.name}')" aria-label="お気に入り">${starSVG}</button>
+      <button class="icon-btn" onclick="removeItem(${it.id})" aria-label="削除">${trashSVG}</button>
+    </td>
+  </tr>`).join('') + '</tbody></table>';
+  document.getElementById('copyText').textContent = items.map(i => `${i.code}  ×${i.qty}${i.name ? '  ' + i.name : ''}`).join('\n');
+}
+
+document.getElementById('codeInput').addEventListener('keydown', e => { if(e.key==='Enter'){e.preventDefault();document.getElementById('qtyInput').focus();}});
+document.getElementById('qtyInput').addEventListener('keydown', e => { if(e.key==='Enter'){e.preventDefault();addItemManual();}});
+document.getElementById('nameInput').addEventListener('keydown', e => { if(e.key==='Enter'){e.preventDefault();addItemManual();}});
+
+render(); renderFavs();
+</script>
+</body>
+</html>
